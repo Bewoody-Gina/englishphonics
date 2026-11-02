@@ -1,0 +1,1056 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, MicOff, Star, Play, CheckCircle, XCircle, LogOut, Award, BookOpen, Users, ArrowRight } from 'lucide-react';
+
+// --- [데이터 모음] ---
+const PHONICS_DATA = {
+  vowels: [
+    { letter: 'A', words: [
+      {text:'Apple', icon:'🍎', phonetic:'/ˈæp.əl/', meaning:'사과', position:'처음'}, {text:'Ape', icon:'🦍', phonetic:'/eɪp/', meaning:'유인원', position:'처음'}, {text:'Arm', icon:'💪', phonetic:'/ɑːrm/', meaning:'팔', position:'처음'}, {text:'Ant', icon:'🐜', phonetic:'/ænt/', meaning:'개미', position:'처음'}, {text:'All', icon:'💯', phonetic:'/ɔːl/', meaning:'모두', position:'처음'},
+      {text:'Cat', icon:'🐱', phonetic:'/kæt/', meaning:'고양이', position:'중간'}, {text:'Cake', icon:'🍰', phonetic:'/keɪk/', meaning:'케이크', position:'중간'}, {text:'Car', icon:'🚗', phonetic:'/kɑːr/', meaning:'자동차', position:'중간'}, {text:'Ball', icon:'🏀', phonetic:'/bɔːl/', meaning:'공', position:'중간'}, {text:'Wash', icon:'🧼', phonetic:'/wɑːʃ/', meaning:'씻다', position:'중간'},
+      {text:'Banana', icon:'🍌', phonetic:'/bəˈnæn.ə/', meaning:'바나나', position:'끝'}, {text:'Sofa', icon:'🛋️', phonetic:'/ˈsoʊ.fə/', meaning:'소파', position:'끝'}, {text:'Panda', icon:'🐼', phonetic:'/ˈpæn.də/', meaning:'판다', position:'끝'}, {text:'Zebra', icon:'🦓', phonetic:'/ˈziː.brə/', meaning:'얼룩말', position:'끝'}, {text:'Pizza', icon:'🍕', phonetic:'/ˈpiːt.sə/', meaning:'피자', position:'끝'}
+    ], icon: '🍎' },
+    { letter: 'E', words: [
+      {text:'Egg', icon:'🥚', phonetic:'/eɡ/', meaning:'계란', position:'처음'}, {text:'Ear', icon:'👂', phonetic:'/ɪr/', meaning:'귀', position:'처음'}, {text:'Eagle', icon:'🦅', phonetic:'/ˈiː.ɡəl/', meaning:'독수리', position:'처음'}, {text:'Eight', icon:'8️⃣', phonetic:'/eɪt/', meaning:'팔(8)', position:'처음'}, {text:'Earth', icon:'🌍', phonetic:'/ɝːθ/', meaning:'지구', position:'처음'},
+      {text:'Pen', icon:'🖊️', phonetic:'/pen/', meaning:'펜', position:'중간'}, {text:'Bear', icon:'🐻', phonetic:'/ber/', meaning:'곰', position:'중간'}, {text:'Bed', icon:'🛏️', phonetic:'/bed/', meaning:'침대', position:'중간'}, {text:'Desk', icon:'🪑', phonetic:'/desk/', meaning:'책상', position:'중간'}, {text:'Tiger', icon:'🐯', phonetic:'/ˈtaɪ.ɡɚ/', meaning:'호랑이', position:'중간'},
+      {text:'Tree', icon:'🌲', phonetic:'/triː/', meaning:'나무', position:'끝'}, {text:'Bee', icon:'🐝', phonetic:'/biː/', meaning:'벌', position:'끝'}, {text:'Shoe', icon:'👞', phonetic:'/ʃuː/', meaning:'신발', position:'끝'}, {text:'House', icon:'🏠', phonetic:'/haʊs/', meaning:'집', position:'끝'}, {text:'Ice', icon:'🧊', phonetic:'/aɪs/', meaning:'얼음', position:'끝'}
+    ], icon: '🥚' },
+    { letter: 'I', words: [
+      {text:'Ice', icon:'🧊', phonetic:'/aɪs/', meaning:'얼음', position:'처음'}, {text:'Iron', icon:'🪓', phonetic:'/aɪrn/', meaning:'다리미', position:'처음'}, {text:'Igloo', icon:'🛖', phonetic:'/ˈɪɡ.luː/', meaning:'이글루', position:'처음'}, {text:'Island', icon:'🏝️', phonetic:'/ˈaɪ.lənd/', meaning:'섬', position:'처음'}, {text:'Ink', icon:'🖋️', phonetic:'/ɪŋk/', meaning:'잉크', position:'처음'},
+      {text:'Pig', icon:'🐷', phonetic:'/pɪɡ/', meaning:'돼지', position:'중간'}, {text:'Fish', icon:'🐟', phonetic:'/fɪʃ/', meaning:'물고기', position:'중간'}, {text:'Bird', icon:'🐦', phonetic:'/bɝːd/', meaning:'새', position:'중간'}, {text:'Kite', icon:'🪁', phonetic:'/kaɪt/', meaning:'연', position:'중간'}, {text:'Milk', icon:'🥛', phonetic:'/mɪlk/', meaning:'우유', position:'중간'},
+      {text:'Ski', icon:'🎿', phonetic:'/skiː/', meaning:'스키', position:'끝'}, {text:'Taxi', icon:'🚕', phonetic:'/ˈtæk.si/', meaning:'택시', position:'끝'}, {text:'Kiwi', icon:'🥝', phonetic:'/ˈkiː.wi/', meaning:'키위', position:'끝'}, {text:'Sushi', icon:'🍣', phonetic:'/ˈsuː.ʃi/', meaning:'초밥', position:'끝'}, {text:'Macaroni', icon:'🍝', phonetic:'/ˌmæk.əˈroʊ.ni/', meaning:'마카로니', position:'끝'}
+    ], icon: '🧊' },
+    { letter: 'O', words: [
+      {text:'Owl', icon:'🦉', phonetic:'/aʊl/', meaning:'올빼미', position:'처음'}, {text:'Orange', icon:'🍊', phonetic:'/ˈɔːr.ɪndʒ/', meaning:'오렌지', position:'처음'}, {text:'Ocean', icon:'🌊', phonetic:'/ˈoʊ.ʃən/', meaning:'바다', position:'처음'}, {text:'Onion', icon:'🧅', phonetic:'/ˈʌn.jən/', meaning:'양파', position:'처음'}, {text:'Ostrich', icon:'🦅', phonetic:'/ˈɑː.strɪtʃ/', meaning:'타조', position:'처음'},
+      {text:'Dog', icon:'🐶', phonetic:'/dɔːɡ/', meaning:'개', position:'중간'}, {text:'Cow', icon:'🐄', phonetic:'/kaʊ/', meaning:'소', position:'중간'}, {text:'Mouse', icon:'🐭', phonetic:'/maʊs/', meaning:'쥐', position:'중간'}, {text:'Frog', icon:'🐸', phonetic:'/frɑːɡ/', meaning:'개구리', position:'중간'}, {text:'Moon', icon:'🌕', phonetic:'/muːn/', meaning:'달', position:'중간'},
+      {text:'Hippo', icon:'🦛', phonetic:'/ˈhɪp.oʊ/', meaning:'하마', position:'끝'}, {text:'Tomato', icon:'🍅', phonetic:'/təˈmeɪ.t̬oʊ/', meaning:'토마토', position:'끝'}, {text:'Potato', icon:'🥔', phonetic:'/pəˈteɪ.t̬oʊ/', meaning:'감자', position:'끝'}, {text:'Zero', icon:'0️⃣', phonetic:'/ˈzɪr.oʊ/', meaning:'영(0)', position:'끝'}, {text:'Mango', icon:'🥭', phonetic:'/ˈmæŋ.ɡoʊ/', meaning:'망고', position:'끝'}
+    ], icon: '🦉' },
+    { letter: 'U', words: [
+      {text:'Umbrella', icon:'☂️', phonetic:'/ʌmˈbrel.ə/', meaning:'우산', position:'처음'}, {text:'Unicorn', icon:'🦄', phonetic:'/ˈjuː.nə.kɔːrn/', meaning:'유니콘', position:'처음'}, {text:'Up', icon:'⬆️', phonetic:'/ʌp/', meaning:'위로', position:'처음'}, {text:'Uncle', icon:'👨', phonetic:'/ˈʌŋ.kəl/', meaning:'삼촌', position:'처음'}, {text:'UFO', icon:'🛸', phonetic:'/ˌjuː.efˈoʊ/', meaning:'유에프오', position:'처음'},
+      {text:'Cup', icon:'☕', phonetic:'/kʌp/', meaning:'컵', position:'중간'}, {text:'Sun', icon:'☀️', phonetic:'/sʌn/', meaning:'태양', position:'중간'}, {text:'Duck', icon:'🦆', phonetic:'/dʌk/', meaning:'오리', position:'중간'}, {text:'Bug', icon:'🐛', phonetic:'/bʌɡ/', meaning:'벌레', position:'중간'}, {text:'Cube', icon:'🧊', phonetic:'/kjuːb/', meaning:'큐브', position:'중간'},
+      {text:'Menu', icon:'📜', phonetic:'/ˈmen.juː/', meaning:'메뉴', position:'끝'}, {text:'Flu', icon:'🤒', phonetic:'/fluː/', meaning:'독감', position:'끝'}, {text:'Glue', icon:'🧴', phonetic:'/ɡluː/', meaning:'풀', position:'끝'}, {text:'Tissue', icon:'🧻', phonetic:'/ˈtɪʃ.uː/', meaning:'휴지', position:'끝'}, {text:'Statue', icon:'🗽', phonetic:'/ˈstætʃ.uː/', meaning:'동상', position:'끝'}
+    ], icon: '☂️' }
+  ],
+  consonants: [
+    { letter: 'B', words: [
+      {text:'Bear', icon:'🐻', phonetic:'/ber/', meaning:'곰', position:'처음'}, {text:'Bus', icon:'🚌', phonetic:'/bʌs/', meaning:'버스', position:'처음'}, {text:'Book', icon:'📖', phonetic:'/bʊk/', meaning:'책', position:'처음'}, {text:'Bee', icon:'🐝', phonetic:'/biː/', meaning:'벌', position:'처음'},
+      {text:'Rabbit', icon:'🐰', phonetic:'/ˈræb.ɪt/', meaning:'토끼', position:'중간'}, {text:'Zebra', icon:'🦓', phonetic:'/ˈziː.brə/', meaning:'얼룩말', position:'중간'}, {text:'Robot', icon:'🤖', phonetic:'/ˈroʊ.bɑːt/', meaning:'로봇', position:'중간'}, {text:'Ribbon', icon:'🎀', phonetic:'/ˈrɪb.ən/', meaning:'리본', position:'중간'},
+      {text:'Web', icon:'🕸️', phonetic:'/web/', meaning:'거미줄', position:'끝'}, {text:'Crab', icon:'🦀', phonetic:'/kræb/', meaning:'게', position:'끝'}, {text:'Tub', icon:'🛁', phonetic:'/tʌb/', meaning:'욕조', position:'끝'}, {text:'Bulb', icon:'💡', phonetic:'/bʌlb/', meaning:'전구', position:'끝'}
+    ], icon: '🐻' },
+    { letter: 'C', words: [
+      {text:'Cat', icon:'🐱', phonetic:'/kæt/', meaning:'고양이', position:'처음'}, {text:'Car', icon:'🚗', phonetic:'/kɑːr/', meaning:'자동차', position:'처음'}, {text:'Cake', icon:'🍰', phonetic:'/keɪk/', meaning:'케이크', position:'처음'}, {text:'Cup', icon:'☕', phonetic:'/kʌp/', meaning:'컵', position:'처음'},
+      {text:'Soccer', icon:'⚽', phonetic:'/ˈsɑː.kɚ/', meaning:'축구', position:'중간'}, {text:'Rocket', icon:'🚀', phonetic:'/ˈrɑː.kɪt/', meaning:'로켓', position:'중간'}, {text:'Doctor', icon:'🩺', phonetic:'/ˈdɑːk.tɚ/', meaning:'의사', position:'중간'}, {text:'Pencil', icon:'✏️', phonetic:'/ˈpen.səl/', meaning:'연필', position:'중간'},
+      {text:'Music', icon:'🎵', phonetic:'/ˈmjuː.zɪk/', meaning:'음악', position:'끝'}, {text:'Magic', icon:'🪄', phonetic:'/ˈmædʒ.ɪk/', meaning:'마술', position:'끝'}, {text:'Picnic', icon:'🍱', phonetic:'/ˈpɪk.nɪk/', meaning:'소풍', position:'끝'}, {text:'Garlic', icon:'🧄', phonetic:'/ˈɡɑːr.lɪk/', meaning:'마늘', position:'끝'}
+    ], icon: '🐱' },
+    { letter: 'D', words: [
+      {text:'Dog', icon:'🐶', phonetic:'/dɔːɡ/', meaning:'개', position:'처음'}, {text:'Desk', icon:'🪑', phonetic:'/desk/', meaning:'책상', position:'처음'}, {text:'Duck', icon:'🦆', phonetic:'/dʌk/', meaning:'오리', position:'처음'}, {text:'Door', icon:'🚪', phonetic:'/dɔːr/', meaning:'문', position:'처음'},
+      {text:'Spider', icon:'🕷️', phonetic:'/ˈspaɪ.dɚ/', meaning:'거미', position:'중간'}, {text:'Window', icon:'🪟', phonetic:'/ˈwɪn.doʊ/', meaning:'창문', position:'중간'}, {text:'Candy', icon:'🍬', phonetic:'/ˈkæn.di/', meaning:'사탕', position:'중간'}, {text:'Ladder', icon:'🪜', phonetic:'/ˈlæd.ɚ/', meaning:'사다리', position:'중간'},
+      {text:'Bed', icon:'🛏️', phonetic:'/bed/', meaning:'침대', position:'끝'}, {text:'Bird', icon:'🐦', phonetic:'/bɝːd/', meaning:'새', position:'끝'}, {text:'Hand', icon:'✋', phonetic:'/hænd/', meaning:'손', position:'끝'}, {text:'Bread', icon:'🍞', phonetic:'/bred/', meaning:'빵', position:'끝'}
+    ], icon: '🐶' },
+    { letter: 'F', words: [
+      {text:'Fish', icon:'🐟', phonetic:'/fɪʃ/', meaning:'물고기', position:'처음'}, {text:'Fox', icon:'🦊', phonetic:'/fɑːks/', meaning:'여우', position:'처음'}, {text:'Frog', icon:'🐸', phonetic:'/frɑːɡ/', meaning:'개구리', position:'처음'}, {text:'Fire', icon:'🔥', phonetic:'/faɪr/', meaning:'불', position:'처음'},
+      {text:'Muffin', icon:'🧁', phonetic:'/ˈmʌf.ɪn/', meaning:'머핀', position:'중간'}, {text:'Dolphin', icon:'🐬', phonetic:'/ˈdɑːl.fɪn/', meaning:'돌고래', position:'중간'}, {text:'Coffee', icon:'☕', phonetic:'/ˈkɑː.fi/', meaning:'커피', position:'중간'}, {text:'Waffle', icon:'🧇', phonetic:'/ˈwɑː.fəl/', meaning:'와플', position:'중간'},
+      {text:'Leaf', icon:'🍃', phonetic:'/liːf/', meaning:'나뭇잎', position:'끝'}, {text:'Roof', icon:'🏠', phonetic:'/ruːf/', meaning:'지붕', position:'끝'}, {text:'Wolf', icon:'🐺', phonetic:'/wʊlf/', meaning:'늑대', position:'끝'}, {text:'Chef', icon:'🧑‍🍳', phonetic:'/ʃef/', meaning:'요리사', position:'끝'}
+    ], icon: '🐟' },
+    { letter: 'G', words: [
+      {text:'Goat', icon:'🐐', phonetic:'/ɡoʊt/', meaning:'염소', position:'처음'}, {text:'Game', icon:'🎮', phonetic:'/ɡeɪm/', meaning:'게임', position:'처음'}, {text:'Girl', icon:'👧', phonetic:'/ɡɝːl/', meaning:'소녀', position:'처음'}, {text:'Gift', icon:'🎁', phonetic:'/ɡɪft/', meaning:'선물', position:'처음'},
+      {text:'Tiger', icon:'🐯', phonetic:'/ˈtaɪ.ɡɚ/', meaning:'호랑이', position:'중간'}, {text:'Dragon', icon:'🐉', phonetic:'/ˈdræɡ.ən/', meaning:'용', position:'중간'}, {text:'Burger', icon:'🍔', phonetic:'/ˈbɝː.ɡɚ/', meaning:'햄버거', position:'중간'}, {text:'Magic', icon:'🪄', phonetic:'/ˈmædʒ.ɪk/', meaning:'마술', position:'중간'},
+      {text:'Pig', icon:'🐷', phonetic:'/pɪɡ/', meaning:'돼지', position:'끝'}, {text:'Dog', icon:'🐶', phonetic:'/dɔːɡ/', meaning:'개', position:'끝'}, {text:'Frog', icon:'🐸', phonetic:'/frɑːɡ/', meaning:'개구리', position:'끝'}, {text:'Bug', icon:'🐛', phonetic:'/bʌɡ/', meaning:'벌레', position:'끝'}
+    ], icon: '🐐' },
+    { letter: 'H', words: [
+      {text:'Hat', icon:'🎩', phonetic:'/hæt/', meaning:'모자', position:'처음'}, {text:'House', icon:'🏠', phonetic:'/haʊs/', meaning:'집', position:'처음'}, {text:'Horse', icon:'🐴', phonetic:'/hɔːrs/', meaning:'말', position:'처음'}, {text:'Hand', icon:'✋', phonetic:'/hænd/', meaning:'손', position:'처음'},
+      {text:'Rhino', icon:'🦏', phonetic:'/ˈraɪ.noʊ/', meaning:'코뿔소', position:'중간'}, {text:'Seahorse', icon:'🐎', phonetic:'/ˈsiː.hɔːrs/', meaning:'해마', position:'중간'}, {text:'Beehive', icon:'🐝', phonetic:'/ˈbiː.haɪv/', meaning:'벌집', position:'중간'}, {text:'Treehouse', icon:'🛖', phonetic:'/ˈtriː.haʊs/', meaning:'오두막', position:'중간'}
+    ], icon: '🎩' },
+    { letter: 'J', words: [
+      {text:'Jam', icon:'🍯', phonetic:'/dʒæm/', meaning:'잼', position:'처음'}, {text:'Juice', icon:'🥤', phonetic:'/dʒuːs/', meaning:'주스', position:'처음'}, {text:'Jump', icon:'⬆️', phonetic:'/dʒʌmp/', meaning:'점프', position:'처음'}, {text:'Jelly', icon:'🍮', phonetic:'/ˈdʒel.i/', meaning:'젤리', position:'처음'},
+      {text:'Ninja', icon:'🥷', phonetic:'/ˈnɪn.dʒə/', meaning:'닌자', position:'중간'}, {text:'Pajamas', icon:'👘', phonetic:'/pəˈdʒɑː.məz/', meaning:'파자마', position:'중간'}, {text:'Emoji', icon:'😀', phonetic:'/ɪˈmoʊ.dʒi/', meaning:'이모지', position:'중간'}, {text:'Magic', icon:'🪄', phonetic:'/ˈmædʒ.ɪk/', meaning:'마술', position:'중간'}
+    ], icon: '🍯' },
+    { letter: 'K', words: [
+      {text:'Key', icon:'🔑', phonetic:'/kiː/', meaning:'열쇠', position:'처음'}, {text:'Kite', icon:'🪁', phonetic:'/kaɪt/', meaning:'연', position:'처음'}, {text:'King', icon:'👑', phonetic:'/kɪŋ/', meaning:'왕', position:'처음'}, {text:'Koala', icon:'🐨', phonetic:'/koʊˈɑː.lə/', meaning:'코알라', position:'처음'},
+      {text:'Monkey', icon:'🐒', phonetic:'/ˈmʌŋ.ki/', meaning:'원숭이', position:'중간'}, {text:'Rocket', icon:'🚀', phonetic:'/ˈrɑː.kɪt/', meaning:'로켓', position:'중간'}, {text:'Cookie', icon:'🍪', phonetic:'/ˈkʊk.i/', meaning:'쿠키', position:'중간'}, {text:'Basket', icon:'🧺', phonetic:'/ˈbæs.kɪt/', meaning:'바구니', position:'중간'},
+      {text:'Book', icon:'📖', phonetic:'/bʊk/', meaning:'책', position:'끝'}, {text:'Duck', icon:'🦆', phonetic:'/dʌk/', meaning:'오리', position:'끝'}, {text:'Milk', icon:'🥛', phonetic:'/mɪlk/', meaning:'우유', position:'끝'}, {text:'Sock', icon:'🧦', phonetic:'/sɑːk/', meaning:'양말', position:'끝'}
+    ], icon: '🔑' },
+    { letter: 'L', words: [
+      {text:'Lion', icon:'🦁', phonetic:'/ˈlaɪ.ən/', meaning:'사자', position:'처음'}, {text:'Lemon', icon:'🍋', phonetic:'/ˈlem.ən/', meaning:'레몬', position:'처음'}, {text:'Leaf', icon:'🍃', phonetic:'/liːf/', meaning:'나뭇잎', position:'처음'}, {text:'Lamp', icon:'💡', phonetic:'/læmp/', meaning:'램프', position:'처음'},
+      {text:'Melon', icon:'🍈', phonetic:'/ˈmel.ən/', meaning:'멜론', position:'중간'}, {text:'Balloon', icon:'🎈', phonetic:'/bəˈluːn/', meaning:'풍선', position:'중간'}, {text:'Color', icon:'🎨', phonetic:'/ˈkʌl.ɚ/', meaning:'색깔', position:'중간'}, {text:'Elephant', icon:'🐘', phonetic:'/ˈel.ə.fənt/', meaning:'코끼리', position:'중간'},
+      {text:'Owl', icon:'🦉', phonetic:'/aʊl/', meaning:'올빼미', position:'끝'}, {text:'Ball', icon:'🏀', phonetic:'/bɔːl/', meaning:'공', position:'끝'}, {text:'Pencil', icon:'✏️', phonetic:'/ˈpen.səl/', meaning:'연필', position:'끝'}, {text:'Snail', icon:'🐌', phonetic:'/sneɪl/', meaning:'달팽이', position:'끝'}
+    ], icon: '🦁' },
+    { letter: 'M', words: [
+      {text:'Monkey', icon:'🐒', phonetic:'/ˈmʌŋ.ki/', meaning:'원숭이', position:'처음'}, {text:'Mouse', icon:'🐭', phonetic:'/maʊs/', meaning:'쥐', position:'처음'}, {text:'Moon', icon:'🌕', phonetic:'/muːn/', meaning:'달', position:'처음'}, {text:'Milk', icon:'🥛', phonetic:'/mɪlk/', meaning:'우유', position:'처음'},
+      {text:'Lemon', icon:'🍋', phonetic:'/ˈlem.ən/', meaning:'레몬', position:'중간'}, {text:'Camel', icon:'🐫', phonetic:'/ˈkæm.əl/', meaning:'낙타', position:'중간'}, {text:'Tomato', icon:'🍅', phonetic:'/təˈmeɪ.t̬oʊ/', meaning:'토마토', position:'중간'}, {text:'Summer', icon:'☀️', phonetic:'/ˈsʌm.ɚ/', meaning:'여름', position:'중간'},
+      {text:'Jam', icon:'🍯', phonetic:'/dʒæm/', meaning:'잼', position:'끝'}, {text:'Room', icon:'🚪', phonetic:'/ruːm/', meaning:'방', position:'끝'}, {text:'Drum', icon:'🥁', phonetic:'/drʌm/', meaning:'북', position:'끝'}, {text:'Farm', icon:'🚜', phonetic:'/fɑːrm/', meaning:'농장', position:'끝'}
+    ], icon: '🐒' },
+    { letter: 'N', words: [
+      {text:'Nest', icon:'🪹', phonetic:'/nest/', meaning:'둥지', position:'처음'}, {text:'Nut', icon:'🥜', phonetic:'/nʌt/', meaning:'견과류', position:'처음'}, {text:'Nose', icon:'👃', phonetic:'/noʊz/', meaning:'코', position:'처음'}, {text:'Net', icon:'🥅', phonetic:'/net/', meaning:'그물', position:'처음'},
+      {text:'Snail', icon:'🐌', phonetic:'/sneɪl/', meaning:'달팽이', position:'중간'}, {text:'Banana', icon:'🍌', phonetic:'/bəˈnæn.ə/', meaning:'바나나', position:'중간'}, {text:'Dino', icon:'🦖', phonetic:'/ˈdaɪ.noʊ/', meaning:'공룡', position:'중간'}, {text:'Window', icon:'🪟', phonetic:'/ˈwɪn.doʊ/', meaning:'창문', position:'중간'},
+      {text:'Sun', icon:'☀️', phonetic:'/sʌn/', meaning:'태양', position:'끝'}, {text:'Pen', icon:'🖊️', phonetic:'/pen/', meaning:'펜', position:'끝'}, {text:'Lion', icon:'🦁', phonetic:'/ˈlaɪ.ən/', meaning:'사자', position:'끝'}, {text:'Train', icon:'🚂', phonetic:'/treɪn/', meaning:'기차', position:'끝'}
+    ], icon: '🪹' },
+    { letter: 'P', words: [
+      {text:'Pig', icon:'🐷', phonetic:'/pɪɡ/', meaning:'돼지', position:'처음'}, {text:'Pen', icon:'🖊️', phonetic:'/pen/', meaning:'펜', position:'처음'}, {text:'Panda', icon:'🐼', phonetic:'/ˈpæn.də/', meaning:'판다', position:'처음'}, {text:'Pizza', icon:'🍕', phonetic:'/ˈpiːt.sə/', meaning:'피자', position:'처음'},
+      {text:'Apple', icon:'🍎', phonetic:'/ˈæp.əl/', meaning:'사과', position:'중간'}, {text:'Spider', icon:'🕷️', phonetic:'/ˈspaɪ.dɚ/', meaning:'거미', position:'중간'}, {text:'Hippo', icon:'🦛', phonetic:'/ˈhɪp.oʊ/', meaning:'하마', position:'중간'}, {text:'Puppy', icon:'🐶', phonetic:'/ˈpʌp.i/', meaning:'강아지', position:'중간'},
+      {text:'Cup', icon:'☕', phonetic:'/kʌp/', meaning:'컵', position:'끝'}, {text:'Map', icon:'🗺️', phonetic:'/mæp/', meaning:'지도', position:'끝'}, {text:'Ship', icon:'🚢', phonetic:'/ʃɪp/', meaning:'배', position:'끝'}, {text:'Soup', icon:'🍲', phonetic:'/suːp/', meaning:'수프', position:'끝'}
+    ], icon: '🐷' },
+    { letter: 'Q', words: [
+      {text:'Queen', icon:'👑', phonetic:'/kwiːn/', meaning:'여왕', position:'처음'}, {text:'Quilt', icon:'🛏️', phonetic:'/kwɪlt/', meaning:'이불', position:'처음'}, {text:'Quiet', icon:'🤫', phonetic:'/ˈkwaɪ.ət/', meaning:'조용한', position:'처음'}, {text:'Quiz', icon:'📝', phonetic:'/kwɪz/', meaning:'퀴즈', position:'처음'},
+      {text:'Squirrel', icon:'🐿️', phonetic:'/ˈskwɝː.əl/', meaning:'다람쥐', position:'중간'}, {text:'Aqua', icon:'💧', phonetic:'/ˈɑː.kwə/', meaning:'물', position:'중간'}, {text:'Liquid', icon:'🫗', phonetic:'/ˈlɪk.wɪd/', meaning:'액체', position:'중간'}, {text:'Square', icon:'🔲', phonetic:'/skwer/', meaning:'정사각형', position:'중간'}
+    ], icon: '👑' },
+    { letter: 'R', words: [
+      {text:'Rabbit', icon:'🐰', phonetic:'/ˈræb.ɪt/', meaning:'토끼', position:'처음'}, {text:'Rose', icon:'🌹', phonetic:'/roʊz/', meaning:'장미', position:'처음'}, {text:'Robot', icon:'🤖', phonetic:'/ˈroʊ.bɑːt/', meaning:'로봇', position:'처음'}, {text:'Ring', icon:'💍', phonetic:'/rɪŋ/', meaning:'반지', position:'처음'},
+      {text:'Bird', icon:'🐦', phonetic:'/bɝːd/', meaning:'새', position:'중간'}, {text:'Turtle', icon:'🐢', phonetic:'/ˈtɝː.t̬əl/', meaning:'거북이', position:'중간'}, {text:'Orange', icon:'🍊', phonetic:'/ˈɔːr.ɪndʒ/', meaning:'오렌지', position:'중간'}, {text:'Carrot', icon:'🥕', phonetic:'/ˈker.ət/', meaning:'당근', position:'중간'},
+      {text:'Car', icon:'🚗', phonetic:'/kɑːr/', meaning:'자동차', position:'끝'}, {text:'Bear', icon:'🐻', phonetic:'/ber/', meaning:'곰', position:'끝'}, {text:'Star', icon:'⭐', phonetic:'/stɑːr/', meaning:'별', position:'끝'}, {text:'Door', icon:'🚪', phonetic:'/dɔːr/', meaning:'문', position:'끝'}
+    ], icon: '🐰' },
+    { letter: 'S', words: [
+      {text:'Sun', icon:'☀️', phonetic:'/sʌn/', meaning:'태양', position:'처음'}, {text:'Sock', icon:'🧦', phonetic:'/sɑːk/', meaning:'양말', position:'처음'}, {text:'Snake', icon:'🐍', phonetic:'/sneɪk/', meaning:'뱀', position:'처음'}, {text:'Star', icon:'⭐', phonetic:'/stɑːr/', meaning:'별', position:'처음'},
+      {text:'Desk', icon:'🪑', phonetic:'/desk/', meaning:'책상', position:'중간'}, {text:'Glasses', icon:'👓', phonetic:'/ˈɡlæs.ɪz/', meaning:'안경', position:'중간'}, {text:'Castle', icon:'🏰', phonetic:'/ˈkæs.əl/', meaning:'성', position:'중간'}, {text:'Basket', icon:'🧺', phonetic:'/ˈbæs.kɪt/', meaning:'바구니', position:'중간'},
+      {text:'Bus', icon:'🚌', phonetic:'/bʌs/', meaning:'버스', position:'끝'}, {text:'Glass', icon:'🥛', phonetic:'/ɡlæs/', meaning:'유리잔', position:'끝'}, {text:'Dress', icon:'👗', phonetic:'/dres/', meaning:'드레스', position:'끝'}, {text:'Shoes', icon:'👟', phonetic:'/ʃuːz/', meaning:'신발', position:'끝'}
+    ], icon: '☀️' },
+    { letter: 'T', words: [
+      {text:'Tiger', icon:'🐯', phonetic:'/ˈtaɪ.ɡɚ/', meaning:'호랑이', position:'처음'}, {text:'Tree', icon:'🌲', phonetic:'/triː/', meaning:'나무', position:'처음'}, {text:'Train', icon:'🚂', phonetic:'/treɪn/', meaning:'기차', position:'처음'}, {text:'Table', icon:'🪑', phonetic:'/ˈteɪ.bəl/', meaning:'탁자', position:'처음'},
+      {text:'Water', icon:'💧', phonetic:'/ˈwɑː.t̬ɚ/', meaning:'물', position:'중간'}, {text:'Butterfly', icon:'🦋', phonetic:'/ˈbʌt̬.ɚ.flaɪ/', meaning:'나비', position:'중간'}, {text:'Turtle', icon:'🐢', phonetic:'/ˈtɝː.t̬əl/', meaning:'거북이', position:'중간'}, {text:'Guitar', icon:'🎸', phonetic:'/ɡɪˈtɑːr/', meaning:'기타', position:'중간'},
+      {text:'Cat', icon:'🐱', phonetic:'/kæt/', meaning:'고양이', position:'끝'}, {text:'Hat', icon:'🎩', phonetic:'/hæt/', meaning:'모자', position:'끝'}, {text:'Bat', icon:'🦇', phonetic:'/bæt/', meaning:'박쥐', position:'끝'}, {text:'Ant', icon:'🐜', phonetic:'/ænt/', meaning:'개미', position:'끝'}
+    ], icon: '🐯' },
+    { letter: 'V', words: [
+      {text:'Van', icon:'🚐', phonetic:'/væn/', meaning:'밴', position:'처음'}, {text:'Violin', icon:'🎻', phonetic:'/ˌvaɪəˈlɪn/', meaning:'바이올린', position:'처음'}, {text:'Vase', icon:'🏺', phonetic:'/veɪs/', meaning:'꽃병', position:'처음'}, {text:'Vest', icon:'🦺', phonetic:'/vest/', meaning:'조끼', position:'처음'},
+      {text:'Seven', icon:'7️⃣', phonetic:'/ˈsev.ən/', meaning:'칠(7)', position:'중간'}, {text:'River', icon:'🏞️', phonetic:'/ˈrɪv.ɚ/', meaning:'강', position:'중간'}, {text:'Glove', icon:'🧤', phonetic:'/ɡlʌv/', meaning:'장갑', position:'중간'}, {text:'Cave', icon:'🕳️', phonetic:'/keɪv/', meaning:'동굴', position:'중간'}
+    ], icon: '🚐' },
+    { letter: 'W', words: [
+      {text:'Water', icon:'💧', phonetic:'/ˈwɑː.t̬ɚ/', meaning:'물', position:'처음'}, {text:'Web', icon:'🕸️', phonetic:'/web/', meaning:'거미줄', position:'처음'}, {text:'Wolf', icon:'🐺', phonetic:'/wʊlf/', meaning:'늑대', position:'처음'}, {text:'Window', icon:'🪟', phonetic:'/ˈwɪn.doʊ/', meaning:'창문', position:'처음'},
+      {text:'Owl', icon:'🦉', phonetic:'/aʊl/', meaning:'올빼미', position:'중간'}, {text:'Cow', icon:'🐄', phonetic:'/kaʊ/', meaning:'소', position:'중간'}, {text:'Towel', icon:'🧣', phonetic:'/taʊəl/', meaning:'수건', position:'중간'}, {text:'Flower', icon:'🌸', phonetic:'/ˈflaʊ.ɚ/', meaning:'꽃', position:'중간'}
+    ], icon: '💧' },
+    { letter: 'X', words: [
+      {text:'X-ray', icon:'🦴', phonetic:'/ˈeks.reɪ/', meaning:'엑스레이', position:'처음'}, {text:'Xylophone', icon:'🎹', phonetic:'/ˈzaɪ.lə.foʊn/', meaning:'실로폰', position:'처음'},
+      {text:'Taxi', icon:'🚕', phonetic:'/ˈtæk.si/', meaning:'택시', position:'중간'}, {text:'Boxer', icon:'🥊', phonetic:'/ˈbɑːk.sɚ/', meaning:'복서', position:'중간'}, {text:'Mixer', icon:'🥣', phonetic:'/ˈmɪk.sɚ/', meaning:'믹서기', position:'중간'}, {text:'Pixel', icon:'👾', phonetic:'/ˈpɪk.səl/', meaning:'픽셀', position:'중간'},
+      {text:'Fox', icon:'🦊', phonetic:'/fɑːks/', meaning:'여우', position:'끝'}, {text:'Box', icon:'📦', phonetic:'/bɑːks/', meaning:'상자', position:'끝'}, {text:'Six', icon:'6️⃣', phonetic:'/sɪks/', meaning:'육(6)', position:'끝'}, {text:'Mix', icon:'🌪️', phonetic:'/mɪks/', meaning:'섞다', position:'끝'}
+    ], icon: '🦴' },
+    { letter: 'Y', words: [
+      {text:'Yellow', icon:'🟡', phonetic:'/ˈjel.oʊ/', meaning:'노란색', position:'처음'}, {text:'Yogurt', icon:'🍦', phonetic:'/ˈjoʊ.ɡɚt/', meaning:'요거트', position:'처음'}, {text:'Yo-yo', icon:'🪀', phonetic:'/ˈjoʊ.joʊ/', meaning:'요요', position:'처음'}, {text:'Yarn', icon:'🧶', phonetic:'/jɑːrn/', meaning:'털실', position:'처음'},
+      {text:'Bicycle', icon:'🚲', phonetic:'/ˈbaɪ.sə.kəl/', meaning:'자전거', position:'중간'}, {text:'Eye', icon:'👁️', phonetic:'/aɪ/', meaning:'눈', position:'중간'}, {text:'Papaya', icon:'🥭', phonetic:'/pəˈpaɪ.ə/', meaning:'파파야', position:'중간'}, {text:'Crayon', icon:'🖍️', phonetic:'/ˈkreɪ.ɑːn/', meaning:'크레파스', position:'중간'},
+      {text:'Boy', icon:'👦', phonetic:'/bɔɪ/', meaning:'소년', position:'끝'}, {text:'Toy', icon:'🧸', phonetic:'/tɔɪ/', meaning:'장난감', position:'끝'}, {text:'Key', icon:'🔑', phonetic:'/kiː/', meaning:'열쇠', position:'끝'}, {text:'Monkey', icon:'🐒', phonetic:'/ˈmʌŋ.ki/', meaning:'원숭이', position:'끝'}
+    ], icon: '🟡' },
+    { letter: 'Z', words: [
+      {text:'Zebra', icon:'🦓', phonetic:'/ˈziː.brə/', meaning:'얼룩말', position:'처음'}, {text:'Zoo', icon:'🦁', phonetic:'/zuː/', meaning:'동물원', position:'처음'}, {text:'Zero', icon:'0️⃣', phonetic:'/ˈzɪr.oʊ/', meaning:'영(0)', position:'처음'}, {text:'Zipper', icon:'🧷', phonetic:'/ˈzɪp.ɚ/', meaning:'지퍼', position:'처음'},
+      {text:'Puzzle', icon:'🧩', phonetic:'/ˈpʌz.əl/', meaning:'퍼즐', position:'중간'}, {text:'Lizard', icon:'🦎', phonetic:'/ˈlɪz.ɚd/', meaning:'도마뱀', position:'중간'}, {text:'Wizard', icon:'🧙', phonetic:'/ˈwɪz.ɚd/', meaning:'마법사', position:'중간'}, {text:'Pizza', icon:'🍕', phonetic:'/ˈpiːt.sə/', meaning:'피자', position:'중간'},
+      {text:'Buzz', icon:'🐝', phonetic:'/bʌz/', meaning:'윙윙거리다', position:'끝'}, {text:'Quiz', icon:'📝', phonetic:'/kwɪz/', meaning:'퀴즈', position:'끝'}, {text:'Jazz', icon:'🎷', phonetic:'/dʒæz/', meaning:'재즈', position:'끝'}, {text:'Fizz', icon:'🫧', phonetic:'/fɪz/', meaning:'탄산소리', position:'끝'}
+    ], icon: '🦓' }
+  ]
+};
+
+// --- [유틸리티 함수] ---
+// LocalStorage 훅
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  return [storedValue, setValue];
+}
+
+// 발음 정확도 측정 (간이 로직)
+function calculateAccuracy(spoken, target) {
+  if (!spoken) return 0;
+  const s = spoken.toLowerCase().replace(/[^a-z]/g, '');
+  const t = target.toLowerCase().replace(/[^a-z]/g, '');
+  
+  // 완벽 일치
+  if (s === t) return 100;
+  // 단어가 포함된 경우 (예: "apple" 인데 "an apple"로 인식)
+  if (s.includes(t)) return 95;
+  
+  // 글자 단위 유사도 계산
+  let matchCount = 0;
+  const minLen = Math.min(s.length, t.length);
+  const maxLen = Math.max(s.length, t.length);
+  
+  for(let i=0; i<minLen; i++) {
+    if(s[i] === t[i]) matchCount++;
+  }
+  
+  let baseAcc = Math.floor((matchCount / maxLen) * 100);
+  
+  // 첫 글자라도 맞추면 최소 50% 부여
+  if (s.charAt(0) === t.charAt(0) && baseAcc < 50) {
+    baseAcc = 50;
+  }
+  
+  return baseAcc === 0 ? 10 : baseAcc;
+}
+
+// --- [공통 컴포넌트] ---
+const Button = ({ onClick, children, variant = 'primary', className = '', disabled = false }) => {
+  const baseStyle = "w-full py-3.5 px-6 rounded-2xl font-bold text-base transition-all duration-300 flex items-center justify-center gap-2";
+  const variants = {
+    primary: "bg-yellow-400 hover:bg-yellow-500 text-yellow-950 shadow-md hover:shadow-lg hover:-translate-y-0.5",
+    secondary: "bg-orange-400 hover:bg-orange-500 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5",
+    success: "bg-amber-500 hover:bg-amber-600 text-white shadow-md",
+    outline: "bg-yellow-50 border-2 border-yellow-300 text-yellow-700 hover:bg-yellow-100",
+    disabled: "bg-slate-100 text-slate-400 cursor-not-allowed"
+  };
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={disabled}
+      className={`${baseStyle} ${disabled ? variants.disabled : variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
+
+// 메세지 박스 (alert 대체)
+const MessageBox = ({ message, type = 'info', onClose }) => {
+  if (!message) return null;
+  const bg = type === 'error' ? 'bg-rose-100 border-rose-300 text-rose-800' : 'bg-yellow-100 border-yellow-300 text-yellow-800';
+  return (
+    <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-4 rounded-2xl shadow-md border-2 z-50 ${bg} flex items-center gap-4 min-w-[300px] justify-between font-medium`}>
+      <span>{message}</span>
+      <button onClick={onClose} className="text-2xl opacity-60 hover:opacity-100 hover:scale-110 transition-transform">&times;</button>
+    </div>
+  );
+};
+
+// 축하 애니메이션 (귀여운 병아리 테마)
+const Confetti = () => {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 flex flex-col items-center justify-center overflow-hidden bg-yellow-50/90 backdrop-blur-sm transition-all duration-500">
+      <div className="text-8xl md:text-9xl mb-6 animate-bounce" style={{ animationDuration: '1s' }}>🐥✨</div>
+      <div className="animate-pulse text-4xl md:text-5xl text-orange-500 font-black tracking-wide drop-shadow-md">
+        삐약삐약! 완벽해!
+      </div>
+    </div>
+  );
+};
+
+// --- [메인 앱 컴포넌트] ---
+export default function App() {
+  // DB 역할의 LocalStorage
+  const [users, setUsers] = useLocalStorage('phonics_users_v2', {});
+  
+  // 상태 관리
+  const [currentUser, setCurrentUser] = useState(null); // null, {id, role}
+  const [currentView, setCurrentView] = useState('login'); // login, studentHome, practice, myPage, teacherHome
+  const [message, setMessage] = useState(null);
+  const [selectedLetter, setSelectedLetter] = useState(null); // 알파벳 데이터 상태 추가
+  
+  const showMessage = (msg, type = 'info') => {
+    setMessage({ text: msg, type });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  // --- 뷰 렌더러 ---
+  const renderView = () => {
+    if (!currentUser) {
+      return <LoginScreen setUsers={setUsers} users={users} onLogin={(user) => {
+        setCurrentUser(user);
+        setCurrentView(user.role === 'teacher' ? 'teacherHome' : 'studentHome');
+      }} showMessage={showMessage} />;
+    }
+
+    if (currentUser.role === 'teacher') {
+      return <TeacherDashboard users={users} onLogout={() => setCurrentUser(null)} />;
+    }
+
+    switch (currentView) {
+      case 'studentHome':
+        return <StudentHome setView={setCurrentView} onLogout={() => setCurrentUser(null)} user={users[currentUser.id]} />;
+      case 'practice':
+        return <PracticeSelector setView={setCurrentView} onSelect={setSelectedLetter} />;
+      case 'practiceSession':
+        return <PracticeSession 
+                 setView={setCurrentView} 
+                 user={users[currentUser.id]} 
+                 updateUser={(updatedData) => {
+                   setUsers(prev => ({...prev, [currentUser.id]: updatedData}));
+                 }}
+                 data={selectedLetter}
+               />;
+      case 'myPage':
+        return <MyPage setView={setCurrentView} user={users[currentUser.id]} />;
+      default:
+        return <StudentHome setView={setCurrentView} onLogout={() => setCurrentUser(null)} user={users[currentUser.id]} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-amber-50/50 font-sans text-slate-800 selection:bg-yellow-200">
+      {message && <MessageBox message={message.text} type={message.type} onClose={() => setMessage(null)} />}
+      <div className="max-w-md mx-auto bg-white min-h-screen shadow-2xl shadow-yellow-200/50 relative overflow-hidden sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-4xl sm:rounded-[2rem] sm:my-8 sm:min-h-[90vh] border-4 border-yellow-100">
+        {renderView()}
+      </div>
+    </div>
+  );
+}
+
+// --- [화면 컴포넌트들] ---
+
+// 1. 로그인 화면
+const LoginScreen = ({ users, setUsers, onLogin, showMessage }) => {
+  const [tab, setTab] = useState('student'); // student, teacher
+  const [studentId, setStudentId] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (tab === 'teacher') {
+      if (password === '8598') { // 교사 데모 비번
+        onLogin({ id: 'teacher', role: 'teacher', name: 'Instructor' });
+      } else {
+        showMessage('비밀번호가 일치하지 않습니다.', 'error');
+      }
+      return;
+    }
+
+    // 학생 로그인 및 자동 가입
+    if (!studentId || !name || !password) {
+      showMessage('모든 항목을 입력해주세요.', 'error');
+      return;
+    }
+
+    if (users[studentId]) {
+      if (users[studentId].password === password) {
+        onLogin({ id: studentId, role: 'student' });
+      } else {
+        showMessage('비밀번호가 일치하지 않습니다.', 'error');
+      }
+    } else {
+      // 신규 가입 처리
+      setUsers({
+        ...users,
+        [studentId]: {
+          id: studentId, name, password, role: 'student', badges: [], logs: []
+        }
+      });
+      showMessage('계정이 생성되었습니다. 환영합니다! 🐣', 'info');
+      onLogin({ id: studentId, role: 'student' });
+    }
+  };
+
+  return (
+    <div className="p-8 md:p-12 h-full flex flex-col justify-center bg-white relative">
+      {/* 배경 장식 */}
+      <div className="absolute top-10 left-10 text-4xl opacity-20 transform -rotate-12">🐤</div>
+      <div className="absolute bottom-20 right-10 text-5xl opacity-20 transform rotate-12">🐣</div>
+
+      <div className="text-center mb-10 relative z-10">
+        <h1 className="text-4xl md:text-5xl font-black text-orange-500 mb-4 flex items-center justify-center gap-3 tracking-tight">
+          <span className="animate-bounce">🐥</span>
+          삐약 파닉스
+        </h1>
+        <p className="text-yellow-700 font-medium text-base md:text-lg bg-yellow-100 inline-block px-4 py-1.5 rounded-full">
+          귀여운 병아리와 함께 영어 발음 연습!
+        </p>
+      </div>
+
+      <div className="flex bg-yellow-50 p-1.5 rounded-2xl mb-8 border-2 border-yellow-100 max-w-sm mx-auto w-full">
+        <button 
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${tab === 'student' ? 'bg-white text-orange-500 shadow-sm border border-yellow-200 scale-105' : 'text-yellow-600 hover:text-orange-500'}`}
+          onClick={() => setTab('student')}
+        >
+          학생 (Student)
+        </button>
+        <button 
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${tab === 'teacher' ? 'bg-white text-orange-500 shadow-sm border border-yellow-200 scale-105' : 'text-yellow-600 hover:text-orange-500'}`}
+          onClick={() => setTab('teacher')}
+        >
+          선생님 (Teacher)
+        </button>
+      </div>
+
+      <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto w-full relative z-10">
+        {tab === 'student' && (
+          <>
+            <input type="text" placeholder="학번 (예: 20401)" value={studentId} onChange={e => setStudentId(e.target.value)} className="w-full p-4 bg-yellow-50/50 border-2 border-yellow-200 rounded-2xl text-base font-medium focus:outline-none focus:border-orange-400 focus:bg-white transition-all placeholder-yellow-400" />
+            <input type="text" placeholder="이름 (예: 홍길동)" value={name} onChange={e => setName(e.target.value)} className="w-full p-4 bg-yellow-50/50 border-2 border-yellow-200 rounded-2xl text-base font-medium focus:outline-none focus:border-orange-400 focus:bg-white transition-all placeholder-yellow-400" />
+          </>
+        )}
+        <input type="password" placeholder={tab === 'teacher' ? "관리자 비밀번호" : "비밀번호"} value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-yellow-50/50 border-2 border-yellow-200 rounded-2xl text-base font-medium focus:outline-none focus:border-orange-400 focus:bg-white transition-all placeholder-yellow-400" />
+        <div className="pt-4">
+          <Button type="submit" className="text-lg py-4">{tab === 'student' ? '시작하기 🐣' : '관리자 로그인'}</Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+// 2. 학생 홈
+const StudentHome = ({ setView, onLogout, user }) => (
+  <div className="p-6 md:p-10 h-full flex flex-col relative bg-white">
+    <div className="flex justify-between items-center mb-10 pb-6 border-b-2 border-yellow-100">
+      <div className="font-bold text-slate-800 flex items-center gap-4">
+        <div className="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center text-3xl border-4 border-yellow-200 shadow-sm">
+          🐤
+        </div>
+        <div>
+          <p className="text-sm text-orange-500 font-medium mb-0.5">환영해, 친구야!</p>
+          <p className="text-xl text-yellow-900">{user?.name} 학생</p>
+        </div>
+      </div>
+      <button onClick={onLogout} className="text-yellow-500 hover:text-orange-500 transition-colors p-3 rounded-full hover:bg-yellow-50">
+        <LogOut size={24} />
+      </button>
+    </div>
+
+    <div className="flex-1 flex flex-col gap-6 justify-center max-w-md mx-auto w-full">
+      <div 
+        onClick={() => setView('practice')}
+        className="group bg-yellow-50 border-2 border-yellow-200 hover:border-orange-400 hover:bg-yellow-100 p-8 rounded-[2rem] shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center gap-4 relative overflow-hidden"
+      >
+        <div className="absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform">📖</div>
+        <div className="bg-white p-5 rounded-3xl text-orange-500 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+          <BookOpen size={40} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-yellow-900 mb-2">발음 훈련 시작 🐥</h2>
+          <p className="text-base text-yellow-700 font-medium leading-relaxed">
+            병아리 선생님과 함께<br/>알파벳 소리를 연습해봐요!
+          </p>
+        </div>
+      </div>
+
+      <div 
+        onClick={() => setView('myPage')}
+        className="group bg-orange-50 border-2 border-orange-200 hover:border-orange-400 hover:bg-orange-100 p-8 rounded-[2rem] shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center gap-4 relative overflow-hidden"
+      >
+        <div className="absolute -left-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform">🏅</div>
+        <div className="bg-white p-5 rounded-3xl text-orange-500 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+          <Award size={40} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-orange-900 mb-2">나의 성장 일기 🐣</h2>
+          <p className="text-base text-orange-700 font-medium leading-relaxed">
+            내가 모은 예쁜 뱃지들과<br/>성공 기록을 구경해요!
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// 3. 파닉스 종류 선택 (모음/자음)
+const PracticeSelector = ({ setView, onSelect }) => {
+  const [type, setType] = useState('vowels'); // vowels, consonants
+  const items = PHONICS_DATA[type];
+
+  const handleStart = (item) => {
+    onSelect(item);
+    setView('practiceSession');
+  };
+
+  return (
+    <div className="p-4 sm:p-6 md:p-10 h-full flex flex-col bg-white">
+      <div className="flex justify-between items-start sm:items-center mb-6 sm:mb-8 gap-2">
+        <h2 className="text-2xl sm:text-3xl font-black text-orange-500 tracking-tight flex items-center gap-1 sm:gap-2 leading-tight">
+          <span>어떤 소리를<br className="block sm:hidden"/> 배울까?</span> 🐣
+        </h2>
+        <button onClick={() => setView('studentHome')} className="shrink-0 text-sm sm:text-base font-bold text-yellow-600 hover:text-orange-500 bg-yellow-50 px-3 sm:px-4 py-2 rounded-full transition-colors mt-1 sm:mt-0">
+          뒤로가기
+        </button>
+      </div>
+
+      <div className="flex gap-2 sm:gap-4 mb-6 sm:mb-8 bg-yellow-50 p-1.5 sm:p-2 rounded-2xl border-2 border-yellow-100">
+        <button 
+          className={`flex-1 py-3 rounded-xl text-base sm:text-lg font-black transition-all duration-300 ${type === 'vowels' ? 'bg-white text-orange-500 shadow-md scale-105 border-2 border-yellow-200' : 'text-yellow-600 hover:bg-yellow-100'}`}
+          onClick={() => setType('vowels')}
+        >
+          모음 (Vowels)
+        </button>
+        <button 
+          className={`flex-1 py-3 rounded-xl text-base sm:text-lg font-black transition-all duration-300 ${type === 'consonants' ? 'bg-white text-orange-500 shadow-md scale-105 border-2 border-yellow-200' : 'text-yellow-600 hover:bg-yellow-100'}`}
+          onClick={() => setType('consonants')}
+        >
+          자음 (Consonants)
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 overflow-y-auto pb-10 pr-1 sm:pr-2">
+        {items.map((item, idx) => (
+          <div 
+            key={idx} 
+            onClick={() => handleStart(item)}
+            className="w-full flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px] border-2 border-yellow-100 rounded-[1.5rem] p-2 sm:p-4 text-center cursor-pointer hover:border-orange-400 hover:bg-yellow-50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 bg-white group relative overflow-hidden"
+          >
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs hidden sm:block">✨</div>
+            <div className="text-5xl sm:text-6xl font-black text-yellow-500 mb-2 group-hover:text-orange-500 transition-colors drop-shadow-sm leading-none">{item.letter}</div>
+            <div className="text-[11px] sm:text-xs text-yellow-700 font-bold bg-yellow-100 rounded-full py-1 px-3 w-auto min-w-[60px] whitespace-nowrap">단어 {item.words.length}개</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// 4. 파닉스 연습 세션 (핵심)
+const PracticeSession = ({ setView, user, updateUser, data }) => {
+  const [targetPosition, setTargetPosition] = useState(null); // '처음', '중간', '끝' 선택 상태
+  const [isIntro, setIsIntro] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [scores, setScores] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [feedback, setFeedback] = useState(null); // { text, type }
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [activeWordIndex, setActiveWordIndex] = useState(-1); // 현재 읽어주는 단어 인덱스
+  
+  const recognitionRef = useRef(null);
+
+  // 선택된 위치에 해당하는 단어들만 필터링
+  const sessionWords = targetPosition 
+    ? data.words.filter(w => w.position === targetPosition) 
+    : [];
+
+  // 음성 인식 및 메모리 누수 방지
+  useEffect(() => {
+    return () => {
+      if (window.speechSynthesis) window.speechSynthesis.cancel(); // 언마운트 시 음성 합성 중단
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch(e) {}
+      }
+    };
+  }, []);
+
+  const handleRecord = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setFeedback({ text: '이 브라우저는 마이크를 지원하지 않아요 😢 (네이버/카톡 앱 대신 크롬이나 사파리를 사용해주세요!)', type: 'error' });
+      return;
+    }
+    
+    // 이전 인식기가 켜져있다면 확실히 강제 종료
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch(e) {}
+    }
+    
+    // 버튼을 누를 때마다 깨끗한 음성 인식 객체를 새로 생성 (다음 단어 오류 방지)
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setFeedback({ text: '마이크 켜짐! 예쁘게 말해볼까요? 🐥🎤', type: 'info' });
+    };
+
+    recognition.onresult = (event) => {
+      const speechResult = event.results[0][0].transcript;
+      const targetWord = sessionWords[currentIndex].text;
+      const accuracy = calculateAccuracy(speechResult, targetWord);
+      
+      setIsRecording(false);
+      
+      // 일치율(퍼센트) 결과 표시
+      if (accuracy >= 90) {
+        setFeedback({ text: `우와 최고야! ("${speechResult}" - 정확도: ${accuracy}%) 🐥✨`, type: 'success' });
+        saveScore(accuracy); // 실제 퍼센트 점수 저장
+      } else if (accuracy >= 50) {
+        setFeedback({ text: `조금만 더! ("${speechResult}" - 정확도: ${accuracy}%) 🐣`, type: 'error' });
+      } else {
+        setFeedback({ text: `다시 한 번 해볼까? ("${speechResult}" - 정확도: ${accuracy}%) 🐤`, type: 'error' });
+      }
+    };
+
+    recognition.onerror = (event) => {
+      setIsRecording(false);
+      console.error("Microphone error:", event.error);
+      
+      if (event.error === 'not-allowed') {
+        setFeedback({ text: '마이크 권한 차단됨! (네이버/카톡 앱 대신 크롬, 사파리 앱을 열어 접속해주세요 🔒)', type: 'error' });
+      } else if (event.error === 'no-speech') {
+        setFeedback({ text: '앗, 아무 소리도 안 들렸어. 다시 해볼까? 😢', type: 'error' });
+      } else {
+        setFeedback({ text: `앗, 소리 인식에 문제가 생겼어요(${event.error}). 다시 해볼까? 😢`, type: 'error' });
+      }
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    try {
+      recognition.start();
+    } catch(e) {
+      console.error("Microphone start error:", e);
+      setIsRecording(false);
+    }
+  };
+
+  const saveScore = (score) => {
+    const newScores = [...scores];
+    newScores[currentIndex] = score;
+    setScores(newScores);
+    
+    setTimeout(() => {
+      if (currentIndex < sessionWords.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+        setFeedback(null);
+      } else {
+        finishSession(newScores);
+      }
+    }, 1500); // 아이들이 피드백을 읽을 수 있게 조금 더 여유시간
+  };
+
+  const finishSession = (finalScores) => {
+    const total = finalScores.reduce((a, b) => a + b, 0);
+    const average = total / sessionWords.length;
+    const passed = average >= 90;
+
+    // 로그 업데이트
+    const newLog = {
+      date: new Date().toLocaleDateString(),
+      letter: data.letter,
+      position: targetPosition, // 위치 정보도 함께 저장
+      score: Math.round(average),
+      passed
+    };
+    
+    let updatedBadges = [...user.badges];
+    if (passed && !updatedBadges.includes(data.letter)) {
+      updatedBadges.push(data.letter);
+    }
+
+    updateUser({
+      ...user,
+      badges: updatedBadges,
+      logs: [newLog, ...user.logs]
+    });
+
+    if (passed) {
+      setShowConfetti(true);
+      setTimeout(() => {
+        setShowConfetti(false);
+        setView('studentHome');
+      }, 3000);
+    } else {
+      alert(`연습 끝! 내 점수는: ${Math.round(average)}점!\n다음에 다시 도전해볼까? 🐥`);
+      setView('studentHome');
+    }
+  };
+
+  const exitSession = () => {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    setView('practice');
+  };
+
+  const playCurrentWord = () => {
+    if (!window.speechSynthesis) return;
+    
+    // 사파리 버그 방지: 현재 재생 중일 때만 취소
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+    
+    // 아주 짧은 지연(10ms)을 두어 취소와 재생 명령어 충돌을 방지합니다.
+    setTimeout(() => {
+      const uWord = new SpeechSynthesisUtterance(sessionWords[currentIndex].text);
+      uWord.lang = 'en-US';
+      uWord.rate = 0.7; // 아이들이 듣기 좋게 약간 느리게
+      
+      window.speechSynthesis.speak(uWord);
+    }, 10);
+  };
+
+  const playIntroSound = () => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel(); // 기존 재생 중단
+    
+    // 1. 도입부 문장 (조금 더 천천히)
+    const uIntro = new SpeechSynthesisUtterance(`Letter ${data.letter}. Listen to the words.`);
+    uIntro.lang = 'en-US';
+    uIntro.rate = 0.7; 
+    uIntro.onstart = () => setActiveWordIndex(-1);
+    
+    // 2. 재귀 방식을 사용하여 단어 사이에 여유 시간(Pause) 추가
+    uIntro.onend = () => {
+      playWordWithDelay(0);
+    };
+
+    const playWordWithDelay = (idx) => {
+      if (idx >= sessionWords.length) {
+        setTimeout(() => setActiveWordIndex(-1), 1000);
+        return;
+      }
+
+      const uWord = new SpeechSynthesisUtterance(sessionWords[idx].text);
+      uWord.lang = 'en-US';
+      uWord.rate = 0.55; // 아이들이 듣기 좋게 재생 속도를 많이 낮춤
+      
+      uWord.onstart = () => {
+        setActiveWordIndex(idx);
+      };
+      
+      uWord.onend = () => {
+        // 단어를 읽은 후 1.2초(1200ms) 대기 후 다음 단어 재생
+        setTimeout(() => {
+          playWordWithDelay(idx + 1);
+        }, 1200);
+      };
+      
+      window.speechSynthesis.speak(uWord);
+    };
+
+    // 모바일(iOS) 오디오 재생 권한을 위해 클릭 핸들러 내에서 즉시 실행
+    window.speechSynthesis.speak(uIntro);
+  };
+
+  // --- [1단계: 학습 위치 선택 화면] ---
+  if (!targetPosition) {
+    const hasStart = data.words.some(w => w.position === '처음');
+    const hasMiddle = data.words.some(w => w.position === '중간');
+    const hasEnd = data.words.some(w => w.position === '끝');
+
+    return (
+      <div className="p-6 md:p-10 h-full flex flex-col relative bg-yellow-50 justify-center items-center overflow-y-auto border-4 border-white rounded-[2rem] m-2 shadow-inner">
+        <div className="absolute top-6 w-full px-6 md:px-10 flex justify-between left-0 box-border">
+          <div className="text-base font-bold text-orange-400 bg-orange-100 px-4 py-1.5 rounded-full shadow-sm">학습 위치 선택 🐥</div>
+          <button onClick={exitSession} className="text-base font-bold text-yellow-600 bg-white px-4 py-1.5 rounded-full shadow-sm hover:bg-orange-100 transition-colors">뒤로가기</button>
+        </div>
+
+        <div className="text-center w-full max-w-sm mt-12">
+          <div className="text-[80px] leading-none font-black text-orange-500 mb-6 drop-shadow-lg animate-bounce" style={{ animationDuration: '2s' }}>{data.letter}</div>
+          <h2 className="text-2xl font-black text-yellow-800 mb-2">알파벳 <span className="text-orange-500">{data.letter}</span>가</h2>
+          <h2 className="text-2xl font-black text-yellow-800 mb-10">어디에 올 때 연습할까요? 🐣</h2>
+
+          <div className="flex flex-col gap-4 w-full">
+            {hasStart && (
+              <button 
+                onClick={() => setTargetPosition('처음')} 
+                className="w-full py-5 px-6 bg-white border-4 border-yellow-200 text-yellow-800 font-bold text-xl rounded-2xl hover:bg-orange-100 hover:border-orange-400 hover:text-orange-600 hover:-translate-y-1 transition-all shadow-sm flex items-center justify-between group"
+              >
+                <span>🏁 처음에 올 때</span>
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity">👉</span>
+              </button>
+            )}
+            {hasMiddle && (
+              <button 
+                onClick={() => setTargetPosition('중간')} 
+                className="w-full py-5 px-6 bg-white border-4 border-yellow-200 text-yellow-800 font-bold text-xl rounded-2xl hover:bg-orange-100 hover:border-orange-400 hover:text-orange-600 hover:-translate-y-1 transition-all shadow-sm flex items-center justify-between group"
+              >
+                <span>🔄 중간에 올 때</span>
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity">👉</span>
+              </button>
+            )}
+            {hasEnd && (
+              <button 
+                onClick={() => setTargetPosition('끝')} 
+                className="w-full py-5 px-6 bg-white border-4 border-yellow-200 text-yellow-800 font-bold text-xl rounded-2xl hover:bg-orange-100 hover:border-orange-400 hover:text-orange-600 hover:-translate-y-1 transition-all shadow-sm flex items-center justify-between group"
+              >
+                <span>🎯 끝에 올 때</span>
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity">👉</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- [2단계: 미니 강의 화면] ---
+  if (isIntro) {
+    return (
+      <div className="p-6 md:p-10 h-full flex flex-col relative bg-yellow-50 justify-center items-center overflow-y-auto border-4 border-white rounded-[2rem] m-2 shadow-inner">
+        <div className="absolute top-6 w-full px-6 md:px-10 flex justify-between left-0 box-border">
+          <div className="text-base font-bold text-orange-400 bg-orange-100 px-4 py-1.5 rounded-full shadow-sm">미니 강의 🐥</div>
+          <button onClick={() => setTargetPosition(null)} className="text-base font-bold text-yellow-600 bg-white px-4 py-1.5 rounded-full shadow-sm hover:bg-orange-100 transition-colors">다시 선택</button>
+        </div>
+
+        <div className="text-center w-full max-w-4xl mt-16 px-2">
+          <div className="text-[60px] md:text-[80px] leading-none font-black text-orange-500 mb-6 drop-shadow-lg animate-bounce" style={{ animationDuration: '2s' }}>{data.letter}</div>
+          
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border-4 border-yellow-200 shadow-lg mb-8 flex flex-col sm:flex-row justify-between items-center relative gap-4 max-w-lg mx-auto w-full">
+            <div className="absolute -top-6 -left-4 text-4xl z-10">🐣</div>
+            <p className="text-yellow-800 text-base sm:text-lg font-bold leading-relaxed text-center sm:text-left flex-1 break-words">
+              재생 버튼을 눌러서<br className="hidden sm:block"/><span className="text-orange-500 text-xl">어떤 소리</span>가 나는지 들어봐요!
+            </p>
+            <button 
+              onClick={playIntroSound}
+              className="w-16 h-16 bg-yellow-400 border-4 border-white rounded-full flex items-center justify-center hover:bg-yellow-500 hover:scale-110 transition-all text-white shadow-md shrink-0"
+            >
+              <Play size={28} className="ml-1 fill-current" />
+            </button>
+          </div>
+
+          {/* 단어 그림 카드 그리드 (가로 형태, 한 줄에 최대 3개씩 배치, 모바일 최적화) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-10 w-full text-center">
+            {sessionWords.map((wordObj, idx) => {
+              const isActive = activeWordIndex === idx;
+              return (
+                <div 
+                  key={idx} 
+                  className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl transition-all duration-300 border-4 w-full relative overflow-hidden ${
+                    isActive 
+                      ? 'bg-orange-100 border-orange-400 scale-105 shadow-xl z-10' 
+                      : 'bg-white border-yellow-100 shadow-sm'
+                  }`}
+                >
+                  <div className={`text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full mb-2 whitespace-nowrap ${isActive ? 'bg-orange-400 text-white' : 'bg-yellow-200 text-yellow-800'}`}>
+                    {wordObj.position}에 올 때
+                  </div>
+                  <div className={`text-4xl flex items-center justify-center w-14 h-14 rounded-full mb-2 shrink-0 ${isActive ? 'bg-orange-200' : 'bg-yellow-50'}`}>
+                    {wordObj.icon}
+                  </div>
+                  <div className="flex flex-col items-center w-full min-w-0">
+                    <span className={`text-lg sm:text-xl font-black truncate w-full ${isActive ? 'text-orange-600' : 'text-yellow-700'}`}>
+                      {wordObj.text}
+                    </span>
+                    <span className="text-xs sm:text-sm text-yellow-800 font-bold truncate w-full mt-0.5">
+                      {wordObj.meaning}
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-yellow-600 font-medium tracking-wide mt-1 truncate w-full">
+                      {wordObj.phonetic}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="max-w-md mx-auto">
+            <Button onClick={() => { window.speechSynthesis.cancel(); setIsIntro(false); }} className="w-full py-4 text-lg">
+              연습 시작하기! 🐥
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- [3단계: 본 훈련 화면] ---
+  const currentWord = sessionWords[currentIndex];
+
+  return (
+    <div className="p-6 md:p-10 h-full flex flex-col relative bg-yellow-50 border-4 border-white rounded-[2rem] m-2 shadow-inner justify-between">
+      {showConfetti && <Confetti />}
+      
+      {/* 헤더 부분 */}
+      <div>
+        <div className="flex justify-between items-center mb-8">
+          <div className="bg-white px-5 py-2 rounded-full text-base font-black text-orange-500 shadow-sm border-2 border-yellow-200">
+            도전! {currentIndex + 1} / {sessionWords.length}
+          </div>
+          <button onClick={exitSession} className="text-base font-bold text-yellow-600 bg-white px-4 py-1.5 rounded-full shadow-sm hover:bg-orange-100 transition-colors">그만하기</button>
+        </div>
+
+        <div className="text-center">
+          <div className="text-2xl mb-4 font-bold text-yellow-700">
+            오늘의 알파벳 <span className="text-4xl font-black text-orange-500 ml-2">{data.letter}</span>
+          </div>
+          
+          <div className="bg-white rounded-[3rem] p-6 md:p-14 shadow-lg border-4 border-yellow-200 mb-8 flex flex-col items-center justify-center min-h-[280px] relative overflow-hidden">
+            <div className="absolute top-4 bg-orange-100 text-orange-600 px-4 py-1.5 rounded-full font-black text-xs sm:text-sm shadow-sm border-2 border-orange-200 z-10">
+              알파벳 {data.letter}가 '{currentWord.position}'에 있어요! 💡
+            </div>
+            <div className="absolute -bottom-6 -right-6 text-7xl opacity-20">🐥</div>
+            
+            {/* 클릭이 잘 되도록 둥글고 고정된 과녁(Hit Area) 추가 */}
+            <div 
+              className="w-32 h-32 md:w-40 md:h-40 mt-8 mb-2 flex items-center justify-center cursor-pointer rounded-full bg-yellow-50 hover:bg-yellow-100 transition-colors shadow-sm relative group"
+              onClick={playCurrentWord}
+              title="클릭해서 발음 듣기"
+            >
+              <div 
+                className="text-7xl md:text-8xl animate-bounce group-hover:scale-110 transition-transform" 
+                style={{ animationDuration: '2s' }}
+              >
+                {currentWord.icon}
+              </div>
+            </div>
+            
+            <div className="text-sm font-bold text-yellow-500 mb-4 bg-yellow-50 px-4 py-2 rounded-full border border-yellow-100 shadow-sm cursor-pointer hover:bg-yellow-100 hover:text-orange-500 transition-colors" onClick={playCurrentWord}>
+              👆 그림을 눌러 발음 듣기
+            </div>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-orange-500 tracking-tight capitalize drop-shadow-sm mb-2 break-words text-center px-4 w-full">
+              {currentWord.text}
+            </h2>
+            <div className="flex flex-col items-center gap-1 text-center w-full px-2">
+              <span className="text-lg md:text-xl text-yellow-600 font-medium tracking-wide break-words">{currentWord.phonetic}</span>
+              <span className="text-xl md:text-2xl text-yellow-800 font-bold break-words">{currentWord.meaning}</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* 피드백 영역 */}
+        <div className="h-14 flex items-center justify-center">
+          {feedback && (
+            <p className={`text-base md:text-lg font-bold px-6 py-3 rounded-full transition-all duration-300 shadow-md ${feedback.type === 'success' ? 'bg-orange-500 text-white' : feedback.type === 'error' ? 'bg-rose-400 text-white' : 'bg-yellow-400 text-yellow-950'}`}>
+              {feedback.text}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 컨트롤 부분 */}
+      <div className="flex flex-col gap-4 pb-8 pt-4 items-center">
+        <button 
+          onClick={handleRecord}
+          disabled={isRecording || (feedback && feedback.type === 'success')}
+          className={`w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 border-4 border-white ${(isRecording || (feedback && feedback.type === 'success')) ? 'opacity-80' : ''} ${isRecording ? 'bg-rose-500 animate-pulse ring-8 ring-rose-200 scale-110' : 'bg-yellow-400 hover:bg-yellow-500 hover:scale-105'}`}
+        >
+          {isRecording ? <MicOff size={40} className="text-white" /> : <Mic size={40} className="text-yellow-950" />}
+        </button>
+        <p className="text-yellow-700 text-base font-bold bg-white px-4 py-1.5 rounded-full shadow-sm mt-2">
+          마이크를 누르고 말해봐요! 🎤
+        </p>
+
+        {/* 테스트 편의를 위한 강제 통과 버튼 */}
+        <button 
+          onClick={() => saveScore(100)}
+          className="mt-6 text-xs font-bold text-yellow-400 hover:text-yellow-600 transition-colors bg-white px-3 py-1 rounded-full border border-yellow-100"
+        >
+          (디버그용) 정답 처리 요술지팡이 🪄
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// 5. 마이 페이지
+const MyPage = ({ setView, user }) => {
+  const allLetters = [...PHONICS_DATA.vowels, ...PHONICS_DATA.consonants].map(d => d.letter);
+  const progressPercentage = (user.badges.length / allLetters.length) * 100;
+  
+  return (
+    <div className="p-6 md:p-10 h-full flex flex-col bg-white">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="text-3xl font-black text-orange-500 tracking-tight flex items-center gap-3">
+          <span>나의 뱃지들</span> 🏅
+        </h2>
+        <button onClick={() => setView('studentHome')} className="text-base font-bold text-yellow-600 hover:text-orange-500 bg-yellow-50 px-4 py-2 rounded-full transition-colors">
+          뒤로가기
+        </button>
+      </div>
+
+      <div className="bg-yellow-50 p-6 md:p-8 rounded-[2rem] border-4 border-yellow-100 mb-10 relative overflow-hidden">
+        <div className="absolute -right-4 -bottom-4 text-7xl opacity-20">🐥</div>
+        <div className="flex justify-between items-end mb-5 relative z-10">
+          <div>
+            <p className="text-base text-yellow-700 font-bold mb-1">모은 뱃지 개수</p>
+            <div className="text-4xl font-black text-orange-500">
+              {user.badges.length} <span className="text-xl text-yellow-500 font-bold">/ {allLetters.length}</span>
+            </div>
+          </div>
+          <div className="text-white font-black text-xl bg-orange-400 px-4 py-1.5 rounded-full shadow-sm">
+            {Math.round(progressPercentage)}% 달성!
+          </div>
+        </div>
+        <div className="w-full bg-white border-2 border-yellow-200 rounded-full h-4 relative z-10 p-0.5">
+          <div className="bg-yellow-400 h-full rounded-full transition-all duration-1000 ease-out relative" style={{ width: `${progressPercentage}%` }}>
+             {progressPercentage > 0 && <span className="absolute -right-3 -top-2 text-xl">🐣</span>}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pr-2">
+        <h3 className="text-lg font-bold text-yellow-700 mb-4 bg-yellow-50 inline-block px-4 py-1.5 rounded-full">✨ 내가 획득한 글자들 ✨</h3>
+        <div className="grid grid-cols-4 md:grid-cols-6 gap-4 mt-2">
+          {allLetters.map((letter) => {
+            const hasBadge = user.badges.includes(letter);
+            return (
+              <div key={letter} className={`aspect-square rounded-2xl flex items-center justify-center text-3xl font-black transition-all duration-300 border-4 ${hasBadge ? 'bg-orange-100 border-orange-400 text-orange-600 shadow-md scale-105 transform rotate-3' : 'bg-slate-50 border-slate-100 text-slate-300 opacity-50'}`}>
+                {letter}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 6. 교사 대시보드
+const TeacherDashboard = ({ users, onLogout }) => {
+  const studentList = Object.values(users).filter(u => u.role === 'student');
+
+  return (
+    <div className="p-6 md:p-10 h-full bg-yellow-50/30 flex flex-col">
+      <div className="flex justify-between items-center mb-10">
+        <h1 className="text-3xl font-black text-yellow-900 flex items-center gap-3">
+          <div className="bg-white p-2 rounded-2xl shadow-sm border-2 border-yellow-200">
+            <Users size={28} className="text-orange-500" /> 
+          </div>
+          선생님 대시보드 👩‍🏫
+        </h1>
+        <Button variant="outline" className="w-auto py-2.5 px-5 text-sm rounded-xl font-bold bg-white" onClick={onLogout}>로그아웃</Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-5 mb-8">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-yellow-200 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute right-2 -bottom-2 text-6xl opacity-10">🐥</div>
+          <p className="text-yellow-600 text-base font-bold mb-2 z-10">등록된 병아리들</p>
+          <p className="text-4xl font-black text-orange-500 z-10">{studentList.length}명</p>
+        </div>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-yellow-200 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute left-2 -bottom-2 text-6xl opacity-10">🎤</div>
+          <p className="text-yellow-600 text-base font-bold mb-2 z-10">총 연습 횟수</p>
+          <p className="text-4xl font-black text-orange-500 z-10">
+            {studentList.reduce((acc, student) => acc + student.logs.length, 0)}건
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl shadow-md border-4 border-yellow-100 overflow-hidden flex-1 flex flex-col">
+        <div className="p-4 bg-yellow-100 border-b-4 border-yellow-200 text-sm font-black text-yellow-800 flex">
+          <div className="w-1/3 pl-2">학생 정보</div>
+          <div className="w-1/4 text-center">진행률 (뱃지)</div>
+          <div className="w-5/12 pl-6">최근 기록</div>
+        </div>
+        <div className="overflow-y-auto flex-1 p-2">
+          {studentList.length === 0 ? (
+            <div className="text-center text-yellow-500 py-16 text-lg font-bold flex flex-col items-center gap-4">
+              <span className="text-5xl">🥚</span>
+              아직 가입한 학생이 없어요!
+            </div>
+          ) : (
+            studentList.map(student => {
+              const latestLog = student.logs[0];
+              return (
+                <div key={student.id} className="flex items-center p-4 border-b-2 border-yellow-50 hover:bg-yellow-50/50 transition-colors rounded-2xl mx-2 my-1">
+                  <div className="w-1/3 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-lg font-black text-orange-500 shrink-0">
+                      {student.name[0]}
+                    </div>
+                    <div>
+                      <p className="font-bold text-yellow-950 text-base">{student.name}</p>
+                      <p className="text-xs text-yellow-600 font-medium mt-0.5">{student.id}</p>
+                    </div>
+                  </div>
+                  <div className="w-1/4 text-center">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white shadow-sm">
+                      {student.badges.length} / 26
+                    </span>
+                  </div>
+                  <div className="w-5/12 pl-6 text-sm text-yellow-700 font-medium">
+                    {latestLog ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="flex items-center gap-2 font-bold">
+                          {latestLog.passed ? <span className="text-lg">🌟</span> : <span className="text-lg">💦</span>}
+                          Letter <span className="text-orange-500">{latestLog.letter}</span> ({latestLog.score}점)
+                        </span>
+                        <span className="text-xs text-yellow-500">{latestLog.date}</span>
+                      </div>
+                    ) : (
+                      <span className="text-yellow-400 italic">아직 연습을 안 했어요! 🐣</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
